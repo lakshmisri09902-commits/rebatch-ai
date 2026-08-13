@@ -15,7 +15,7 @@ app = FastAPI(title="ReBatch AI Engine")
 
 os.makedirs("static/qr_codes", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory=".")
 
 # Buyer matching database classified by material type
 BUYER_MATCHES = {
