@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReBatch AI — Visual Inspection Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-6 relative">
+
+    <!-- Header -->
+    <header class="max-w-6xl mx-auto flex justify-between items-center border-b border-slate-700 pb-4 mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-emerald-400">ReBatch AI</h1>
+            <p class="text-sm text-slate-400">Real-Time Camera Visual Analysis & Passport Generator</p>
+        </div>
+        <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500 px-3 py-1 rounded-full text-xs font-semibold">
+            SYSTEM READY
+        </span>
+    </header>
+
+    <!-- Main Dashboard -->
+    <main class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+        
+        <!-- Live Camera Feed Section -->
+        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 h-fit space-y-4">
+            <h2 class="text-xl font-semibold text-emerald-300">1. Live Camera Scanner</h2>
+            
+            <div class="relative w-full aspect-video bg-black rounded-xl overflow-hidden border border-slate-700 flex items-center justify-center">
+                <video id="webcam" autoplay playsinline class="w-full h-full object-cover"></video>
+                <canvas id="canvas" class="hidden"></canvas>
+                
+                <div class="absolute inset-0 border-2 border-dashed border-emerald-400/50 rounded-xl pointer-events-none flex items-center justify-center">
+                    <span class="text-xs text-emerald-400 bg-slate-900/80 px-2 py-1 rounded">Point Camera at Material</span>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <button type="button" id="startCamBtn" onclick="startCamera()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-medium py-2 rounded-xl text-sm transition">
+                    📷 Start Camera
+                </button>
+                <button type="button" id="scanBtn" onclick="captureAndScan()" disabled class="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-700 disabled:text-slate-500 text-slate-950 font-bold py-3 rounded-xl transition">
+                    ⚡ Capture & Analyze Photo
+                </button>
+            </div>
+        </div>
+
+        <!-- Dashboard Outputs -->
+        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 md:col-span-2">
+            <h2 class="text-xl font-semibold mb-4 text-emerald-300">2. Real-Time Scan Results</h2>
+            
+            <div id="resultsContainer" class="hidden space-y-6">
+                
+                <!-- Detected Material Banner -->
+                <div class="bg-slate-900 p-4 rounded-xl border border-emerald-500/40">
+                    <span class="text-xs text-slate-400 block uppercase font-bold tracking-wider">Identified Material Type</span>
+                    <span id="resMaterial" class="text-2xl font-bold text-emerald-400">--</span>
+                </div>
+
+                <!-- Metrics Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-700">
+                        <span class="text-xs text-slate-400 block">Moisture %</span>
+                        <span id="resMoisture" class="text-xl font-bold text-amber-400">--</span>
+                    </div>
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-700">
+                        <span class="text-xs text-slate-400 block">Protein Content</span>
+                        <span id="resProtein" class="text-xl font-bold text-emerald-400">--</span>
+                    </div>
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-700">
+                        <span class="text-xs text-slate-400 block">Spoilage Window</span>
+                        <span id="resDecay" class="text-xl font-bold text-rose-400">--</span>
+                    </div>
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-700">
+                        <span class="text-xs text-slate-400 block">Fair Price / Ton</span>
+                        <span id="resPrice" class="text-xl font-bold text-emerald-300">--</span>
+                    </div>
+                </div>
+
+                <!-- Digital Passport Card -->
+                <div class="bg-slate-900 p-4 rounded-xl border border-emerald-500/30 flex items-center justify-between">
+                    <div>
+                        <h3 class="font-bold text-emerald-400">Digital Passport Generated</h3>
+                        <p class="text-xs text-slate-400 mt-1" id="resBatchId">Batch ID: --</p>
+                        <p class="text-xs text-emerald-300 mt-2">🌱 Avoided Methane: <span id="resMethane">0</span> kg CH₄</p>
+                    </div>
+                    <img id="resQr" src="" alt="Digital Passport QR" class="w-24 h-24 rounded-lg bg-white p-1">
+                </div>
+
+                <!-- Buyer Matches -->
+                <div>
+                    <h3 class="font-semibold text-slate-300 mb-2">3. Recommended Off-taker Matches</h3>
+                    <div id="matchesList" class="space-y-2"></div>
+                </div>
+            </div>
+
+            <div id="placeholder" class="text-center py-16 text-slate-500">
+                Turn on the camera and click "Capture & Analyze Photo" to inspect material in real-time.
+            </div>
+        </div>
+    </main>
+
+    <!-- Connection Modal Pop-up -->
+    <div id="connectModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-800 border border-emerald-500/50 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="text-lg font-bold text-emerald-400">🤝 Off-taker Connection Requested</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white">✕</button>
+            </div>
+            <div class="space-y-3 text-sm">
+                <p class="text-slate-300">A pickup & trade inquiry has been initiated with <strong id="modalOfftakerName" class="text-emerald-300">--</strong>.</p>
+                <div class="bg-slate-900 p-3 rounded-lg border border-slate-700 space-y-1">
+                    <p class="text-xs text-slate-400">Requirement: <span id="modalOfftakerType" class="text-slate-200">--</span></p>
+                    <p class="text-xs text-slate-400">Assigned Logistics ID: <span id="modalBatchId" class="text-emerald-400 font-mono">--</span></p>
+                    <p class="text-xs text-slate-400">Estimated Dispatch: <span class="text-amber-300">Within 4 Hours</span></p>
+                </div>
+                <div class="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-xs text-emerald-300">
+                    ✅ Digital Passport metrics sent directly to off-taker procurement team.
+                </div>
+            </div>
+            <button onclick="closeModal()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-2 rounded-xl transition">
+                Done
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('webcam');
+        const canvas = document.getElementById('canvas');
+        const scanBtn = document.getElementById('scanBtn');
+        let currentBatchId = "";
+
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                video.srcObject = stream;
+                scanBtn.disabled = false;
+                document.getElementById('startCamBtn').innerText = "✅ Camera Active";
+                document.getElementById('startCamBtn').classList.replace("bg-slate-700", "bg-slate-800");
+            } catch (err) {
+                alert("Camera permission denied or camera not found.");
+            }
+        }
+
+        async function captureAndScan() {
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const imageBase64 = canvas.toDataURL('image/jpeg');
+
+            const response = await fetch('/api/v1/scan', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ image_data: imageBase64 })
+            });
+
+            const data = await response.json();
+            currentBatchId = data.batch_id;
+            
+            document.getElementById('placeholder').classList.add('hidden');
+            document.getElementById('resultsContainer').classList.remove('hidden');
+
+            document.getElementById('resMaterial').innerText = data.detected_material;
+            document.getElementById('resMoisture').innerText = data.metrics.moisture + '%';
+            document.getElementById('resProtein').innerText = data.metrics.protein + '%';
+            document.getElementById('resDecay').innerText = data.metrics.decay_hours + ' hrs';
+            document.getElementById('resPrice').innerText = '₹' + data.metrics.fair_price;
+            document.getElementById('resBatchId').innerText = 'Batch ID: ' + data.batch_id;
+            document.getElementById('resMethane').innerText = data.metrics.methane_saved;
+            document.getElementById('resQr').src = data.qr_code_url;
+
+            const matchesList = document.getElementById('matchesList');
+            matchesList.innerHTML = '';
+            data.matches.forEach(m => {
+                matchesList.innerHTML += `
+                    <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-700 flex justify-between items-center text-sm">
+                        <div>
+                            <span class="font-medium text-slate-200">${m.name}</span>
+                            <span class="text-xs text-slate-500 block">${m.type}</span>
+                        </div>
+                        <button onclick="connectOfftaker('${m.name}', '${m.type}')" class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-lg text-xs hover:bg-emerald-500 hover:text-black font-semibold transition">
+                            Connect Off-taker
+                        </button>
+                    </div>`;
+            });
+        }
+
+        function connectOfftaker(name, type) {
+            document.getElementById('modalOfftakerName').innerText = name;
+            document.getElementById('modalOfftakerType').innerText = type;
+            document.getElementById('modalBatchId').innerText = currentBatchId;
+            document.getElementById('connectModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('connectModal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
